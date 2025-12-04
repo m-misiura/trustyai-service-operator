@@ -122,15 +122,24 @@ func (r *NemoGuardrailsReconciler) mountNemoConfigs(ctx context.Context, nemoGua
 
 func (r *NemoGuardrailsReconciler) createDeployment(ctx context.Context, nemoGuardrails *nemoguardrailsv1alpha1.NemoGuardrails, caBundleInitContainerConfig utils.CABundleInitContainerConfig, configMapsToMount []corev1.ConfigMap) (*appsv1.Deployment, error) {
 	var containerImages ContainerImages
+	var err error
 
-	// ==== get nemo guardrails image from trustyai configmap ===========================================================
-	nemoGuardrailsImage, err := utils.GetImageFromConfigMap(ctx, r.Client, nemoGuardrailsImageKey, constants.ConfigMap, r.Namespace)
-	if nemoGuardrailsImage == "" || err != nil {
-		utils.LogErrorRetrieving(ctx, err, "nemo-guardrails image from configmap", constants.ConfigMap, r.Namespace)
-		return nil, err
+	// ==== get nemo guardrails image - prefer user-specified, fallback to configmap ====================================
+	var nemoGuardrailsImage string
+	if nemoGuardrails.Spec.Image != "" {
+		// User provided custom image
+		nemoGuardrailsImage = nemoGuardrails.Spec.Image
+		log.FromContext(ctx).Info("using custom NemoGuardrailsImage " + nemoGuardrailsImage + " from CR spec")
+	} else {
+		// Fallback to ConfigMap default
+		nemoGuardrailsImage, err = utils.GetImageFromConfigMap(ctx, r.Client, nemoGuardrailsImageKey, constants.ConfigMap, r.Namespace)
+		if nemoGuardrailsImage == "" || err != nil {
+			utils.LogErrorRetrieving(ctx, err, "nemo-guardrails image from configmap", constants.ConfigMap, r.Namespace)
+			return nil, err
+		}
+		log.FromContext(ctx).Info("using default NemoGuardrailsImage " + nemoGuardrailsImage + " from ConfigMap " + r.Namespace + ":" + constants.ConfigMap)
 	}
 	containerImages.NemoGuardrailsImage = nemoGuardrailsImage
-	log.FromContext(ctx).Info("using NemoGuardrailsImage " + nemoGuardrailsImage + " " + "from config map " + r.Namespace + ":" + constants.ConfigMap)
 
 	// ==== create deployment definition ================================================================================
 	deploymentConfig := DeploymentConfig{

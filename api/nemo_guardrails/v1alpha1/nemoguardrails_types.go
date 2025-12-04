@@ -46,6 +46,10 @@ type NemoGuardrailsSpec struct {
 	// Define Env information for the main container
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+	// Image specifies the container image for NeMo Guardrails server
+	// If not specified, defaults to the image defined in the operator's ConfigMap
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 type CAStatus struct {

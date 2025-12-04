@@ -173,6 +173,11 @@ spec:
                   - name
                   type: object
                 type: array
+              image:
+                description: |-
+                  Image specifies the container image for NeMo Guardrails server
+                  If not specified, defaults to the image defined in the operator's ConfigMap
+                type: string
               nemoConfigs:
                 description: NemoConfig should be the names of the configmaps containing
                   NeMO server configuration files. All files in NemoConfigs will be
